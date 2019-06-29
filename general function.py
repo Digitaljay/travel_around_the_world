@@ -132,7 +132,7 @@ def general(you_native_city,to_visit,date_to_go):     # в поле to_visit д�
         #print(*real_path[::-1])
         return [general_cost,real_path[::-1]]
 
-
+    you_native_city=[you_native_city]
     all_cities=you_native_city+to_visit
 
     cities=[]
