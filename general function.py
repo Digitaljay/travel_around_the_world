@@ -1,4 +1,6 @@
 def general(you_native_city,to_visit,date_to_go):     # в поле to_visit должен быть массив городов, которые вы собираетесь посетить,
+    time_trav=[]
+    transp=[]
     def avia(d_city,a_city,data):                     # date_to_go вводится в формате ДД.ММ.ГГГГ
         import requests
         import json
@@ -17,11 +19,13 @@ def general(you_native_city,to_visit,date_to_go):     # в поле to_visit д�
         avia = json.loads(requests.get(url).text)
         flies=avia['best_prices']
         newlist=[]
+        dist=0
         for k in flies:
             if datetime.date(int(k['depart_date'].split('-')[0]),int(k['depart_date'].split('-')[1]),int(k['depart_date'].split('-')[2]))==datetime.date(data[2],data[1],data[0]):
                 newlist.append(int(k['value']))
+                dist=int(k['distance'])
 
-        return(min(newlist))
+        return(min(newlist),round(dist/950))
     #print(avia('Екатеринбург',"Москва","03.07.2019"))
 
     def tutu(depart, arrive, date_to_go): #depart - город отбытия, arrive - город прибытия, date_to_go - дата формате ДД.ММ.ГГГГ
@@ -29,6 +33,8 @@ def general(you_native_city,to_visit,date_to_go):     # в поле to_visit д�
         import requests
         from bs4 import BeautifulSoup
         import pickle
+
+        times=[]
 
         costs_for_trains=[]
         with open("depart.txt", "rb") as myFile:
@@ -63,11 +69,12 @@ def general(you_native_city,to_visit,date_to_go):     # в поле to_visit д�
                         try:
                             for type in train['params']['withSeats']['categories']:
                                 costs_for_trains.append(int(type['params']['price']['RUB']))
+                            times.append(round(int(train['params']['trip']['travelTimeSeconds'])/3600))
                         except:
                             pass
                 except:
                     pass
-        return min(costs_for_trains)
+        return min(costs_for_trains),min(times)
     #print(tutu('Екатеринбург',"Москва","03.07.2019"))
 
     def path(n,edges):
@@ -151,19 +158,39 @@ def general(you_native_city,to_visit,date_to_go):     # в поле to_visit д�
                 try:
                     path_train=tutu(city[1],point[1],date_to_go)
                 except:
-                    path_train=1000000000
+                    path_train=[1000000000,1000000000]
                 try:
                     path_avia=avia(city[1],point[1],date_to_go)
                 except:
-                    path_avia=1000000000
+                    path_avia=[1000000000,1000000000]
                 #print(start,finish,min(path_train,path_avia))
-                edges.append([start,finish,min(path_train,path_avia)])
-
-
+                if path_train[0]<path_avia[0]:
+                    time_trav.append(path_train[1])
+                    edges.append([start,finish,path_train[0]])
+                    transp.append('поезд')
+                else:
+                    time_trav.append(path_avia[1])
+                    edges.append([start,finish,path_avia[0]])
+                    transp.append('самолёт')
     result=path(len(all_cities),edges)
     order=[]
     # print('Цена маршрута (в рублях): ',result[0])
     # print('Порядок посещения городов: ')
-    for i in result[1]:
-        order.append(cities[i-1][1])
-    return [result[0],order]
+    total_time=0
+    #print(result)
+    for i in range(len(result[1])-1):
+        order.append([cities[result[1][i]-1][1]])
+        pair=[result[1][i],result[1][i+1]]
+        for j in range(len(edges)):
+            if edges[j][0]==pair[0] and edges[j][1]==pair[1]:
+                total_time+=time_trav[j]
+                order[-1].append(transp[j])
+    order.append(you_native_city[0])
+    #print(time_trav)
+    return [result[0],order,total_time]
+RESULT=general('Екатеринбург',['Владивосток','Томск'],'03.07.2019')
+print(RESULT[2],'ч')
+print('Порядок городов в маршруте: ')
+for i in RESULT[1]:
+    print(*i)
+print("Цена маршрута: ",RESULT[0],'руб')
