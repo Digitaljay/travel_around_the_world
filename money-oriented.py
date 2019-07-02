@@ -1,4 +1,20 @@
 # как можно быстрее при ограниченном бюджете
+from geopy.geocoders import Nominatim
+import time
+import re
+from math import radians, cos, sin, asin, sqrt
+geolocator = Nominatim(user_agent="my-application")
+#location = geolocator.reverse("52.509669, 13.376294")
+#print(location.address)
+def haversine(lon1, lat1, lon2, lat2):            #finds distance between a couple of objects (navigation system wgs84)
+    # haversine formula
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    km = 6371* c
+    return km
 def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_visit должен быть массив городов, которые вы собираетесь посетить,
     time_trav=[]                                      # date_to_go вводится в формате ДД.ММ.ГГГГ
     transp=[]
@@ -56,7 +72,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
     #
     #     return [min(newlist),round(dist/950 + 0.49)]
 
-    def tutu(depart, arrive, date_to_go,nextt): #depart - город отбытия, arrive - город прибытия, date_to_go - дата формате ДД.ММ.ГГГГ
+    def tutu(depart, arrive, date_to_go, nextt): #depart - город отбытия, arrive - город прибытия, date_to_go - дата формате ДД.ММ.ГГГГ
         import json
         import requests
         from bs4 import BeautifulSoup
@@ -64,7 +80,9 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
 
         times=[]
 
-
+        pattern = re.compile('CAPTCHA')
+        # result = pattern.findall('AV Analytics Vidhya AV')
+        # print result
 
         costs_for_trains=[]
         with open("depart.txt", "rb") as myFile:
@@ -86,11 +104,11 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
 
         for p_d in p_dl:
             for p_a in p_al:
-                if nextt!=0:
-                    date_to_go=date_to_go.spit('.')
-                    url = 'https://www.tutu.ru/poezda/rasp_d.php?nnst1='+p_d+'&nnst2='+p_a+'&date='+str(int(date_to_go[0]+nextt))+'.'+str(date_to_go[1])+'.'+str(date_to_go[2])
-                else:
+                if nextt==0:
                     url = 'https://www.tutu.ru/poezda/rasp_d.php?nnst1='+p_d+'&nnst2='+p_a+'&date='+date_to_go
+                else:
+                    date_to_go=date_to_go.split('.')
+                    url = 'https://www.tutu.ru/poezda/rasp_d.php?nnst1='+p_d+'&nnst2='+p_a+'&date='+str(int(date_to_go[0])+nextt)+'.'+date_to_go[1]+'.'+date_to_go[2]
                 page = requests.get(url)
                 soup = BeautifulSoup(page.text, 'html.parser')
                 needed=soup.find_all('script')[18]
@@ -106,7 +124,28 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                         except:
                             pass
                 except:
-                    pass
+
+                    while len(pattern.findall(str(soup)))!=0:
+                        time.sleep(1)
+                        print(pattern.findall(str(soup)))
+                        page = requests.get(url)
+                        soup = BeautifulSoup(page.text, 'html.parser')
+                        print(pattern.findall(str(soup)))
+                        needed=soup.find_all('script')[18]
+                        try:
+                            preobr=str(needed).split('\n')[1].strip()
+                            j=json.loads(preobr[16:-1])
+
+                            for train in j['componentData']['searchResultList'][0]['trains']:
+                                try:
+                                    for type in train['params']['withSeats']['categories']:
+                                        costs_for_trains.append(int(type['params']['price']['RUB']))
+                                    times.append(round(int(train['params']['trip']['travelTimeSeconds'])/3600))
+                                except:
+                                    pass
+                        except:
+                            pass
+        print([min(costs_for_trains),min(times)])
         return [min(costs_for_trains),min(times)]
     #print(tutu('Екатеринбург',"Москва","03.07.2019"))
 
@@ -193,10 +232,27 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                 try:
                     path_train=tutu(city[1],point[1],date_to_go,0)
                 except:
+                    # time.sleep(10)
                     try:
-                        path_train=tutu(city[1],point[1],date_to_go,3)
+                        path_train=tutu(city[1],point[1],date_to_go,1)
                     except:
-                        path_train=[1000000000,1000000000]
+                        # time.sleep(10)
+                        try:
+                            path_train=tutu(city[1],point[1],date_to_go,2)
+                        except:
+                            # time.sleep(10)
+                            try:
+                                path_train=tutu(city[1],point[1],date_to_go,3)
+                            except:
+                                location1 = geolocator.geocode(city[1])
+                                location2 = geolocator.geocode(point[1])
+                                lat1,lon1=[location1.latitude, location1.longitude]
+                                lat2,lon2=[location2.latitude, location2.longitude]
+                                if haversine(lon1, lat1, lon2, lat2)>350:
+                                    path_train=[1000000000000,1000000000000]
+                                else:
+                                    path_train=[1000000000,1000000000]
+                                # time.sleep(10)
 
                 try:
                     path_avia=avia(city[1],point[1],date_to_go,0)
@@ -209,10 +265,9 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                         except:
                             path_avia=[1000000000,1000000000]
                 #print(start,finish,min(path_train,path_avia))
-
-                if path_train[0]==path_avia[0]==1000000000:
-                    time_trav.append(0)
-                    edges.append([start,finish,0])
+                #print(str(start)+' '+str(finish),[path_train,path_avia])
+                if path_train[0]==1000000000 and path_avia[0]==1000000000:
+                    edges.append([start,finish,100])
                     transp.append('местный транспорт (автобус, такси и т.д.)')
                     table[str(start)+' '+str(finish)]=[[100,100],[100,100]]
                     time_trav.append(1)
@@ -228,7 +283,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                     table[str(start)+' '+str(finish)]=[path_train,path_avia]
     #print('table is ready')
     # for i in table:
-    #    print(i,table[i])
+    #     print(i,table[i])
     result=path(len(all_cities),edges)
     order=[]
     # print('Цена маршрута (в рублях): ',result[0])
@@ -260,7 +315,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
      #   print(ind_t)
     #print(coins,time_lost)
     return [coins,order,time_lost]
-RESULT=general('Екатеринбург',['Челябинск','Нижний Тагил','Тюмень'],'11.07.2019',40000)
+RESULT=general('Екатеринбург',['Челябинск','Нижний Тагил','Тюмень','Омск',"Владивосток"],'10.07.2019',50000)
 print('Цена: от',RESULT[0],"руб")
 for i in RESULT[1]:
     print(' | '.join(i))
