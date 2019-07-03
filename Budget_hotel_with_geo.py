@@ -81,4 +81,4 @@ def hotels(city, check_in, check_out, budget, lon_point, lat_point, name_point):
                   + str(int(ch['priceFrom'])), sep='\n')
     except UnboundLocalError:
         print('Вам не хватает денежных средств!')
-hotels('Москва', '10.07.2019', '30.07.2019', budget=8000, lon_point=37.617635, lat_point=55.755814, name_point='Центр Москвы')
+#hotels('Москва', '10.07.2019', '30.07.2019', budget=8000, lon_point=37.617635, lat_point=55.755814, name_point='Центр Москвы')
