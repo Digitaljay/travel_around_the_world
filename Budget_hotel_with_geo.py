@@ -63,12 +63,6 @@ def hotels(city, check_in, check_out, budget, lon_point, lat_point, name_point):
             indexes.append(dis_list.index((min(dis_list))))
             dis_list[dis_list.index((min(dis_list)))] = 10 ** 5
 
-    # print(closest_dist)
-    # 'Расстояние до указанной точки в км: ' + str(closest_dist[])
-
-
-
-
     for ind in indexes:
         ch = hotel_list[ind]
         print('Название отеля: ' + ch['hotelName'], 'Количество звёзд: '
