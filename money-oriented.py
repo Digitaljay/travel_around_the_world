@@ -4,6 +4,9 @@ import time
 import re
 from math import radians, cos, sin, asin, sqrt
 geolocator = Nominatim(user_agent="my-application")
+headers = {
+    'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'
+}
 #location = geolocator.reverse("52.509669, 13.376294")
 #print(location.address)
 def haversine(lon1, lat1, lon2, lat2):            #finds distance between a couple of objects (navigation system wgs84)
@@ -109,7 +112,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                 else:
                     date_to_go=date_to_go.split('.')
                     url = 'https://www.tutu.ru/poezda/rasp_d.php?nnst1='+p_d+'&nnst2='+p_a+'&date='+str(int(date_to_go[0])+nextt)+'.'+date_to_go[1]+'.'+date_to_go[2]
-                page = requests.get(url)
+                page = requests.get(url,headers=headers)
                 soup = BeautifulSoup(page.text, 'html.parser')
                 needed=soup.find_all('script')[18]
                 try:
@@ -126,9 +129,9 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                 except:
 
                     while len(pattern.findall(str(soup)))!=0:
-                        time.sleep(1)
+                        time.sleep(2)
                         print(pattern.findall(str(soup)))
-                        page = requests.get(url)
+                        page = requests.get(url,headers=headers)
                         soup = BeautifulSoup(page.text, 'html.parser')
                         print(pattern.findall(str(soup)))
                         needed=soup.find_all('script')[18]
@@ -304,7 +307,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
     coins=result[0]
     time_lost=total_time
     ind_t=0
-    while coins<budget and ind_t!=len(new_table)-1:
+    while coins+new_table[ind_t][1][0]-new_table[ind_t][0][0]<=budget and ind_t!=len(new_table)-1:
         if new_table[ind_t][1][1]<new_table[ind_t][0][1] and new_table[ind_t][1][0]>=new_table[ind_t][0][0] and new_table[ind_t][1][1]!=100:
             order[ind_t][1]='самолёт'
             time_lost-=new_table[ind_t][0][1]
@@ -315,7 +318,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
      #   print(ind_t)
     #print(coins,time_lost)
     return [coins,order,time_lost]
-RESULT=general('Екатеринбург',['Челябинск','Нижний Тагил','Тюмень','Омск',"Владивосток"],'10.07.2019',50000)
+RESULT=general('Екатеринбург',['Нижний Тагил','Казань',"Санкт-Петербург"],'10.08.2019',40000)
 print('Цена: от',RESULT[0],"руб")
 for i in RESULT[1]:
     print(' | '.join(i))
