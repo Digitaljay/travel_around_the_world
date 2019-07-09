@@ -20,27 +20,30 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
                             return x['codes']['yandex_code']
         date = date.split('.')
         api_key = 'cafb041f-753a-4572-8e33-b8be52d5a05d'
-        url = 'https://api.rasp.yandex.net/v3.0/search/?apikey=' + api_key + '&format=json&from='\
-              + city_code(city=from_city) + '&to='+ city_code(city=to_city) + '&lang=ru_RU&page=1&date=' + \
-              str(date[2])+'-'+str(date[1])+'-'+str(date[0])
-        response = requests.get(url)
-        bus_json = response.json()
-        for j in bus_json['segments']:
-            if j['tickets_info']['places'] != []:
-                #print('------------------------------------------------')
-                #print(j['arrival'], j['departure'], round(j['duration']/3600, 2),
-                      #j['tickets_info']['places'][0]['price']['whole'],
-                      #j['thread']['carrier']['title'], j['thread']['carrier']['url'], sep='\n')
-                x = [j['from']['transport_type'],
-                      #j['arrival'], j['departure'],
-                      j['tickets_info']['places'][0]['price']['whole'],
-                      round(j['duration']/3600, 2),
-                      j['thread']['carrier']['title'], j['thread']['carrier']['url']]
-                transport.append(x)
-                #print('------------------------------------------------')
-        if len(transport)==0:
-            transport.append(['нет подходящего транспорта',1000000000,'время и цена неизвестны'])
-        return transport[0]
+        try:
+            url = 'https://api.rasp.yandex.net/v3.0/search/?apikey=' + api_key + '&format=json&from='\
+                  + city_code(city=from_city) + '&to='+ city_code(city=to_city) + '&lang=ru_RU&page=1&date=' + \
+                  str(date[2])+'-'+str(date[1])+'-'+str(date[0])
+            response = requests.get(url)
+            bus_json = response.json()
+            for j in bus_json['segments']:
+                if j['tickets_info']['places'] != []:
+                    #print('------------------------------------------------')
+                    #print(j['arrival'], j['departure'], round(j['duration']/3600, 2),
+                          #j['tickets_info']['places'][0]['price']['whole'],
+                          #j['thread']['carrier']['title'], j['thread']['carrier']['url'], sep='\n')
+                    x = [j['from']['transport_type'],
+                          #j['arrival'], j['departure'],
+                          j['tickets_info']['places'][0]['price']['whole'],
+                          round(j['duration']/3600, 2),
+                          j['thread']['carrier']['title'], j['thread']['carrier']['url']]
+                    transport.append(x)
+                    #print('------------------------------------------------')
+            if len(transport)==0:
+                transport.append(['нет подходящего транспорта',1000000000,'время и цена неизвестны'])
+            return transport[0]
+        except:
+            return ['нет подходящего транспорта',1000000000,'время и цена неизвестны']
     #print(bus(date='12.07.2019', from_city='Реж', to_city='Екатеринбург'))
     def avia(d_city,a_city,data):
             import requests
@@ -176,7 +179,7 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
         lat_lon=[location.latitude, location.longitude]
         RESULT.append([cities[q[i]-1][1],lat_lon,charact])
     return[RESULT,total_cost,total_time]
-print(general('Екатеринбург',['Санкт-Петербург','Казань'],'24.07.2019',60000))
+print(general('Москва',['Екатеринбург','Казань'],'24.07.2019',60000))
 #возвращает данные в таком формате: [[[город,[lat, lon], [тип транспорта, цена, время]],[город,[lat, lon], [тип транспорта, цена, время]...[город,[lat, lon], [тип транспорта, цена, время]],цена(общая),время(общее)]
 #example: [[['Екатеринбург', [56.839104, 60.60825], ['plane', 6385, 1]], ['Казань', [55.7823547, 49.1242266], ['plane', 4475, 2]], ['Санкт-Петербург', [59.938732, 30.316229], ['plane', 6629, 2]]], 17489, 5]
 
