@@ -1,6 +1,8 @@
 def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_visit должен быть массив городов, которые вы собираетесь посетить,
     time_trav=[]                                      # date_to_go вводится в формате ДД.ММ.ГГГГ
     transp=[]
+    from geopy.geocoders import Nominatim
+    geolocator = Nominatim(user_agent="my-application")
     def bus(date, from_city, to_city):
         import requests
         transport = []
@@ -170,6 +172,11 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
         charact=params[cities[q[i]-1][1]+cities[q[i+1]-1][1]]
         total_cost+=charact[1]
         total_time+=charact[2]
-        RESULT.append([cities[q[i]-1][1],charact])
+        location = geolocator.geocode(cities[q[i]-1][1])
+        lat_lon=[location.latitude, location.longitude]
+        RESULT.append([cities[q[i]-1][1],lat_lon,charact])
     return[RESULT,total_cost,total_time]
 print(general('Екатеринбург',['Санкт-Петербург','Казань'],'24.07.2019',60000))
+#возвращает данные в таком формате: [[[город,[lat, lon], [тип транспорта, цена, время]],[город,[lat, lon], [тип транспорта, цена, время]...[город,[lat, lon], [тип транспорта, цена, время]],цена(общая),время(общее)]
+#example: [[['Екатеринбург', [56.839104, 60.60825], ['plane', 6385, 1]], ['Казань', [55.7823547, 49.1242266], ['plane', 4475, 2]], ['Санкт-Петербург', [59.938732, 30.316229], ['plane', 6629, 2]]], 17489, 5]
+
