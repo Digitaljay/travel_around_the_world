@@ -5,11 +5,37 @@ import re
 from math import radians, cos, sin, asin, sqrt
 geolocator = Nominatim(user_agent="my-application")
 
+# def avia(d_city,a_city,data,nextt):
+#         import requests
+#         import json
+#         import datetime
+#         data=data.split('.')
+#         ask_url='https://www.travelpayouts.com/widgets_suggest_params?q=Из%20'+d_city+'%20в%20'+a_city
+#         ask=json.loads(requests.get(ask_url).text)
+#         d_code=ask['origin']['iata']
+#         a_code=ask['destination']['iata']
+#         if a_code=='NVR':
+#             a_code='GOJ'
+#         elif d_code=='NVR':
+#             d_code='GOJ'
+#         url = 'http://min-prices.aviasales.ru/calendar_preload?origin='+d_code+'&destination='+a_code+'&depart_date='+data[2]+'-'+data[1]+'-'+data[0]+'&one_way=true'
+#         data=[int(i) for i in data]
+#         avia = json.loads(requests.get(url).text)
+#         flies=avia['best_prices']
+#         newlist=[]
+#         dist=0
+#         for k in flies:
+#             if datetime.date(int(k['depart_date'].split('-')[0]),int(k['depart_date'].split('-')[1]),int(k['depart_date'].split('-')[2]))==datetime.date(data[2],data[1],data[0])+datetime.timedelta(days=nextt):
+#                 newlist.append(int(k['value']))
+#                 dist=int(k['distance'])
+#
+#         return [min(newlist),round(dist/950 + 0.49)]
+
 def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_visit должен быть массив городов, которые вы собираетесь посетить,
     time_trav=[]                                      # date_to_go вводится в формате ДД.ММ.ГГГГ
     transp=[]
     from dateutil.relativedelta import relativedelta
-    def avia(d_city,a_city,data,nextt):
+    def avia(d_city,a_city,data):
         import requests
         import json
         import datetime
@@ -23,17 +49,28 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
         elif d_code=='NVR':
             d_code='GOJ'
         url = 'http://min-prices.aviasales.ru/calendar_preload?origin='+d_code+'&destination='+a_code+'&depart_date='+data[2]+'-'+data[1]+'-'+data[0]+'&one_way=true'
+        #print(url)
         data=[int(i) for i in data]
         avia = json.loads(requests.get(url).text)
         flies=avia['best_prices']
         newlist=[]
         dist=0
         for k in flies:
-            if datetime.date(int(k['depart_date'].split('-')[0]),int(k['depart_date'].split('-')[1]),int(k['depart_date'].split('-')[2]))==datetime.date(data[2],data[1],data[0])+datetime.timedelta(days=nextt):
-                newlist.append(int(k['value']))
-                dist=int(k['distance'])
-
-        return [min(newlist),round(dist/950 + 0.49)]
+                if datetime.date(int(k['depart_date'].split('-')[0]),int(k['depart_date'].split('-')[1]),int(k['depart_date'].split('-')[2]))==datetime.date(data[2],data[1],data[0])+datetime.timedelta(days=14):
+                    newlist.append(int(k['value']))
+                    dist=int(k['distance'])
+        minn=0
+        try:
+            minn=min(newlist)
+        except:
+            try:
+                for k in flies:
+                        newlist.append(int(k['value']))
+                        dist=int(k['distance'])
+                minn=min(newlist)
+            except:
+                minn=1000000000000
+        return [minn,round(dist/950 + 0.49)]
 
     table={}
 
@@ -139,17 +176,25 @@ def general(you_native_city,to_visit,date_to_go,budget):     # в поле to_vi
             if edges[j][0]==pair[0] and edges[j][1]==pair[1]:
                 total_time+=time_trav[j]
     order.append(you_native_city)
-    coins=result[0]
-    time_lost=total_time
+
+    # coins=result[0]
+    # time_lost=total_time
+
+    coins=0
+    time_lost=0
+
+    for i in range(len(order)-1):
+        av=avia(order[i][0],order[i+1][0],date_to_go)
+        #print(order[i][0],order[i+1][0],date_to_go,av[0])
+        coins+=av[0]
+        time_lost+=av[1]
 
     return [coins,order,time_lost]
-RESULT=general('Екатеринбург',['Сочи','Казань',"Санкт-Петербург"],'10.08.2019',40000)
+RESULT=general('Екатеринбург',['Лос-Анджелес','Казань','Сочи'],'17.07.2019',60000)
 print('Цена: от',RESULT[0],"руб")
 for i in RESULT[1]:
     print(' | '.join(i))
 print('Затраченное время: ', RESULT[2], 'ч')
-
-# print(RESULT[2],'ч')
 # print('Порядок городов в маршруте: ')
 # for i in RESULT[1]:
 #     print(*i)
